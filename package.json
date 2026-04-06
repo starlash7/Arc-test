@@ -5,9 +5,17 @@
   "type": "module",
   "scripts": {
     "start": "tsx --env-file=.env index.ts",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "appkit:bootstrap:wallet": "tsx --env-file=.env app-kit/bootstrap-viem-wallet.ts",
+    "appkit:bootstrap:bridge": "tsx --env-file=.env app-kit/bootstrap-bridge-wallet.ts",
+    "appkit:bridge:arc": "tsx --env-file=.env app-kit/bridge-viem.ts",
+    "appkit:send:arc": "tsx --env-file=.env app-kit/send-viem.ts",
+    "appkit:swap:mainnet": "tsx --env-file=.env app-kit/swap-viem.ts"
   },
   "dependencies": {
+    "@circle-fin/adapter-circle-wallets": "^1.2.4",
+    "@circle-fin/adapter-viem-v2": "^1.8.1",
+    "@circle-fin/app-kit": "^1.2.1",
     "@circle-fin/developer-controlled-wallets": "^10.2.0",
     "viem": "^2.38.5"
   },

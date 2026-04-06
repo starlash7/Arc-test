@@ -69,6 +69,133 @@ Those artifacts are intended for the "specifics + visuals" writeup: job ID, tx h
 npm run check
 ```
 
+## App Kit Playground
+
+This workspace also includes a small App Kit playground built around the official Viem adapter:
+
+- `send()` on Arc Testnet
+- `bridge()` between Sepolia and Arc Testnet
+- `swap()` on mainnet chains supported by App Kit
+
+Why start here:
+
+- It is the shortest App Kit path that can reuse the Circle credentials already needed for the ERC-8183 flow.
+- It follows the official App Kit quickstart shape.
+- It can bootstrap a local wallet by funding it from an existing Arc Testnet wallet.
+- It gives you a clean base to extend into bridge and swap flows later.
+
+Official references:
+
+- App Kit overview: https://docs.arc.network/app-kit
+- Send quickstart: https://docs.arc.network/app-kit/quickstarts/send-tokens-same-chain
+- Bridge with Circle Wallets: https://docs.arc.network/app-kit/quickstarts/bridge-with-circle-wallets
+- Swap quickstart: https://docs.arc.network/app-kit/quickstarts/swap-tokens-same-chain
+
+### App Kit Env
+
+Add these to `.env`:
+
+```dotenv
+APP_KIT_FUNDER_WALLET_ADDRESS=YOUR_EXISTING_ARC_TESTNET_WALLET
+APP_KIT_BOOTSTRAP_AMOUNT=1.00
+APP_KIT_PRIVATE_KEY=YOUR_LOCAL_ARC_TESTNET_PRIVATE_KEY
+APP_KIT_RECIPIENT_ADDRESS=YOUR_ARC_TESTNET_RECIPIENT_WALLET
+APP_KIT_SEND_AMOUNT=0.10
+APP_KIT_SEND_TOKEN=USDC
+```
+
+For swap, add:
+
+```dotenv
+KIT_KEY=YOUR_KIT_KEY
+APP_KIT_SWAP_CHAIN=Ethereum
+APP_KIT_SWAP_TOKEN_IN=USDC
+APP_KIT_SWAP_TOKEN_OUT=USDT
+APP_KIT_SWAP_AMOUNT_IN=1.00
+APP_KIT_SWAP_SLIPPAGE_BPS=300
+```
+
+Important:
+
+- App Kit `swap` is mainnet-only according to the official quickstart.
+- In the current SDK build installed here, `kit.getSupportedChains("swap")` does not include `Arc_Testnet`.
+- So this workspace supports `send` and `bridge` for Arc Testnet, but `swap` only for supported mainnet chains such as `Ethereum`.
+
+### Bootstrap a Wallet
+
+```bash
+npm run appkit:bootstrap:wallet
+```
+
+This generates a local EOA private key, funds it with Arc Testnet USDC from your existing wallet, and writes a reusable env snippet under `.context/runs/app-kit-bootstrap-<timestamp>/wallet.env`.
+
+If `APP_KIT_PRIVATE_KEY` is already set, the script reuses that wallet and sends additional Arc Testnet USDC to it instead of generating a new key.
+
+### Bootstrap a Bridge Wallet
+
+```bash
+npm run appkit:bootstrap:bridge
+```
+
+This generates or reuses a local EOA private key, requests `native + USDC` on `Ethereum_Sepolia` through the Circle testnet faucet API, and writes a reusable env snippet under `.context/runs/app-kit-bridge-bootstrap-<timestamp>/wallet.env`.
+
+If the faucet API returns `Forbidden`, the script still saves the generated wallet env so you can fund that Sepolia address manually and continue.
+
+### Run App Kit Bridge
+
+```bash
+npm run appkit:bridge:arc
+```
+
+The bridge script:
+
+- uses `@circle-fin/app-kit`
+- uses `@circle-fin/adapter-viem-v2`
+- estimates the bridge first
+- bridges `USDC` between `Ethereum_Sepolia` and `Arc_Testnet`
+- supports `APP_KIT_BRIDGE_FROM_CHAIN` and `APP_KIT_BRIDGE_TO_CHAIN`
+- can use Circle's forwarder with `APP_KIT_BRIDGE_USE_FORWARDER=true`
+- can route to your own `APP_KIT_BRIDGE_RECIPIENT_ADDRESS` on Arc
+- writes artifacts under `.context/runs/app-kit-bridge-<timestamp>/`
+
+### Run App Kit Send
+
+```bash
+npm run appkit:send:arc
+```
+
+The script:
+
+- uses `@circle-fin/app-kit`
+- uses `@circle-fin/adapter-viem-v2`
+- estimates the send first
+- executes `send()` on `Arc_Testnet`
+- writes artifacts under `.context/runs/app-kit-send-<timestamp>/`
+
+### Run App Kit Swap
+
+```bash
+npm run appkit:swap:mainnet
+```
+
+The swap script:
+
+- uses `@circle-fin/app-kit`
+- uses `@circle-fin/adapter-viem-v2`
+- requires `KIT_KEY`
+- estimates the swap first
+- executes `swap()` on a supported mainnet chain
+- writes artifacts under `.context/runs/app-kit-swap-<timestamp>/`
+
+Default example:
+
+- chain: `Ethereum`
+- token in: `USDC`
+- token out: `USDT`
+- amount: `1.00`
+
+If you set `APP_KIT_SWAP_CHAIN=Arc_Testnet`, the script fails fast with a clear message because App Kit swap support does not currently include Arc Testnet.
+
 ## Arc Testnet Activity Roadmap
 
 Last checked: 2026-04-06
@@ -103,9 +230,9 @@ Start with funded wallets and a working Arc network connection.
 
 Do not jump straight to LP creation. A wider set of simple actions is more useful at the start:
 
-- Swap once
-- Bridge once
-- Send once
+- Send once on Arc Testnet
+- Bridge once to or from Arc Testnet
+- Swap once on an App Kit-supported mainnet chain
 
 Official capability reference:
 
@@ -114,6 +241,10 @@ Official capability reference:
 Community app example:
 
 - XyloNet: https://www.xylonet.xyz/
+
+Note:
+
+- App Kit `swap` is mainnet-only right now. For Arc Testnet specifically, the supported path in this repo is `send + bridge`.
 
 ### 3. Mint / Domain / Simple Deploy
 
